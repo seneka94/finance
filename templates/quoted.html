@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Log In
+{% endblock %}
+
+{% block main %}
+
+    <H4>{{ name["name"] }} ({{ name["symbol"] }})</H4>
+    <H3>{{ name["price"] | usd }}</H3>
+
+{% endblock %}
