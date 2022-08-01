@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Log In
+{% endblock %}
+
+{% block main %}
+<main class="container py-5 text-center">
+
+          <div style="color: green">
+            <h3>Не знаєш яку наступну книжку прочитати?</h3>
+            <h5>Довірся сигналу з космосу:</h5>
+          </div>
+            <form  method="post">
+                <p><button id="random" class="btn btn-primary" type="submit"> натискай на кнопку</button></p>
+            </form>
+
+                <h3>{{ book[0]["title"] }}</h3>
+                <h3>{{ book[0]["author"] }}</h3>
+                <h3>{{ book[0]["rating"]}}</h3>
+                <h3>{{ book[0]["ratings"] }}</h3>
+                <h3><a href="{{ book[0]["link"] }}">більше про книгу на goodreads</a></h3>
+
+        <footer style = "position:relative; top:200px;">
+            <h3>Footer</h3>
+            <p>Remember to check <a href="https://seneka94.github.io/trivia/">test</a></p>
+        </footer>
+
+</main>
+{% endblock %}
