@@ -5,15 +5,40 @@
 {% endblock %}
 
 {% block main %}
-    <form action="/buy" method="post">
-        <div class="mb-3">
-            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="symbol" name="symbol" placeholder="Stock symbol" type="text">
-        </div>
-        <div class="mb-3">
-            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="shares" name="shares" placeholder="number of shares" type="text">
-        </div>
+<div class="container">
 
-        <button class="btn btn-primary" type="submit">Buy</button>
-    </form>
+    <div class="section">
+        <h4>Добавити книгу "на потім"</h4>
+        <form action="/buy" method="post">
+            <div class="mb-3">
+                <input autocomplete="off" autofocus class="mx-auto w-auto" id="symbol" name="title" placeholder="Назва книги" type="text">
+
+                <input autocomplete="off" autofocus class="mx-auto w-auto" id="shares" name="author" placeholder="Автор" type="text">
+
+                <button class="btn btn-primary" type="submit">Добавити</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="section">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th class="text">Назва книги</th>
+                    <th class="text">Автор</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in MyList %}
+                    <tr>
+                        <td class="text">{{ row["title"] }}</td>
+                        <td class="text">{{ row["author"] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
 
 {% endblock %}
