@@ -41,9 +41,7 @@ def lookup(symbol):
     # Contact API
     try:
         api_key = os.environ.get("API_KEY")
-        url = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote_plus(symbol)}&maxResults=40&orderBy=relevance&keyes&key={api_key}"
-
-                #https://cloud.iexapis.com/stable/stock/{urllib.parse.quote_plus(symbol)}/quote?token={api_key}"
+        url = f"https://cloud.iexapis.com/stable/stock/{urllib.parse.quote_plus(symbol)}/quote?token={api_key}"
         response = requests.get(url)
         response.raise_for_status()
     except requests.RequestException:
@@ -53,9 +51,9 @@ def lookup(symbol):
     try:
         quote = response.json()
         return {
-            "total": quote["totalItems"],
-            "items": quote["items"]
-            # "symbol": quote["subject"]
+            "name": quote["companyName"],
+            "price": float(quote["latestPrice"]),
+            "symbol": quote["symbol"]
         }
     except (KeyError, TypeError, ValueError):
         return None

@@ -1,5 +1,4 @@
 import os
-import random
 
 from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session
@@ -24,8 +23,11 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQLite database
-db = SQL("sqlite:///books.db")
-
+db = SQL("sqlite:///finance.db")
+#uri = os.getenv("DATABASE_URL")
+#if uri.startswith("postgres://"):
+#    uri = uri.replace("postgres://", "postgresql://")
+#db = SQL(uri)
 
 # Make sure API key is set
 if not os.environ.get("API_KEY"):
@@ -41,34 +43,16 @@ def after_request(response):
     return response
 
 
-@app.route("/", methods=["GET", "POST"])
-#@login_required
+@app.route("/")
+@login_required
 def index():
     """Show portfolio of stocks"""
-    if request.method == "POST":
-        n = random.randint(0,4750)
-        if request.form['ua'] == 'ua':
-            UkrLit = db.execute("SELECT * FROM books WHERE id == ?", n)
-            return render_template("index.html", UkrLit=UkrLit)
-        elif request.form['ua'] == 'classic':
-            classic = db.execute("SELECT * FROM class1 WHERE id == ?", n)
-            return render_template("index.html", classic=classic)
-        elif request.form['ua'] == 'new':
-            new = db.execute("SELECT * FROM new WHERE id == ?", n)
-            return render_template("index.html", new=new)
-        elif request.form['ua'] == 'biographi':
-            biographi = db.execute("SELECT * FROM biographi WHERE id == ?", n)
-            return render_template("index.html", biographi=biographi)
-        elif request.form['ua'] == 'my_list':
-            my_list = db.execute("SELECT * FROM my WHERE orderID == ?", n)
-            return render_template("index.html", my_list = my_list)
-
-
-        return render_template("index.html")
-
-    return render_template("index.html")
-
-
+    table = db.execute("SELECT symb, name, sum(shares) FROM my WHERE userID == ? group by symb", session['user_id'])
+    total = db.execute ("SELECT cash FROM users WHERE id == ?", session['user_id'])
+    sum = 0
+    for row in table:
+        sum = sum + (lookup(row["symb"])["price"] * row["sum(shares)"])
+    return render_template("index.html", table=table, lookup=lookup, total=total, sum=sum)
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -76,18 +60,39 @@ def index():
 def buy():
     """Buy shares of stock"""
     if request.method == "POST":
-        title = request.form.get("title")
-        author = request.form.get("author")
+        symbol1 = request.form.get("symbol")
+        symbol = symbol1.upper()
+        shares = request.form.get("shares")
+        stock = lookup(symbol)
+        if not symbol or stock == None:
+            return apology("no symbol entered or no such stock symbol exists", 403)
+        if not shares.isnumeric() or int(shares) < 1 or not shares:
+            return apology("no shares entered or shares is not a positive integer", 403)
+        # Check price
+        price = stock["price"]
+        # Check user balance
+        balance = db.execute("SELECT cash FROM users WHERE id == ?", session["user_id"])
+        if balance[0]["cash"] < (price * int(shares)):
+            return apology("No money", 403)
 
-        db.execute("INSERT INTO my (userID, title, author) VALUES(?, ?, ?)", session["user_id"], title, author)
-        MyList = db.execute("SELECT title, author FROM my")
+        total_price = stock["price"] * int(shares)
+        portfolio = db.execute("INSERT INTO portfolio (usernameID, symbol, stock, price, number_of_shares, total_price, stat) VALUES(?, ?, ?, ?, ?, ?, ?)", session["user_id"],stock["symbol"], stock["name"], stock["price"], int(shares), total_price, "buy")
+        x = balance[0]["cash"] - total_price
+        update = db.execute("UPDATE users SET cash == ? WHERE id == ?", x, session["user_id"])
 
-        return render_template("buy.html", MyList = MyList)
+        my_symbol = db.execute("SELECT symb FROM my WHERE userID = ? AND symb = ?", session["user_id"], symbol)
+        my_shares = db.execute("SELECT shares FROM my WHERE userID = ? AND symb = ?", session["user_id"], symbol)
 
+        if len(my_symbol) >= 1:
+            if symbol == my_symbol[0]["symb"]:
+                new_shares = my_shares[0]["shares"] + int(shares)
+                db.execute("UPDATE my SET shares = ? WHERE userID = ? AND symb = ?", new_shares, session["user_id"], symbol)
+        else:
+            db.execute("INSERT INTO my (userID, symb, name, shares) VALUES(?, ?, ?, ?)", session["user_id"], stock["symbol"], stock["name"], int(shares))
+
+        return render_template("buy.html")
     else:
-        # Display the entries in the database on index.html
-        MyList = db.execute("SELECT title, author FROM my")
-        return render_template("buy.html", MyList = MyList)
+        return render_template("buy.html")
 
 
 
@@ -152,22 +157,9 @@ def quote():
     """Get stock quote."""
     if request.method == "POST":
         symbol = request.form.get("symbol")
-        inf = lookup(symbol)
-        list = []
-        for name in inf["items"]:
-            for i, j in name.items():
-                dict = {i:j}
-                list.append(dict)
-        list1=[]
-        for dict in list:
-            for i in dict:
-                if i == "volumeInfo":
-                    for j in i:
-                        list1.append(dict[i])
-                        #db.execute("INSERT INTO portfolio (usernameID, symbol, stat) VALUES(?, ?, ?)", session["user_id"], dict[i]["title"], dict[i]["industryIdentifiers"][0]["identifier"])
-
-        if inf != None:
-            return render_template("quoted.html",  inf = inf, list=list, list1=list1)
+        stock = lookup(symbol)
+        if stock != None:
+            return render_template("quoted.html", name = stock)
         return apology("the stock does not exist", 403)
     else:
         return render_template("quote.html")
@@ -190,7 +182,7 @@ def register():
         hash = generate_password_hash(password, method="pbkdf2:sha256")
         table = db.execute("INSERT INTO users (username, hash) VALUES(?, ?)", username, hash)
 
-        return render_template("login.html")
+        return redirect("/")
     else:
         return render_template("register.html")
 

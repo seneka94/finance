@@ -5,23 +5,8 @@
 {% endblock %}
 
 {% block main %}
-<table class="table">
-    <tbody>
-        {% for row in list1 %}
 
-        <tr>
-            <td> {{ inf.total }} </td>
-            <td> {{ row.title }}</td>
-            <td> {{ row.authors }} </td>
-            <td> {{ row.categories }}</td>
-            <td> {{ row.industryIdentifiers[0]["identifier"] }}</td>
-        </tr>
-
-        {% endfor %}
-
-    </tbody>
-</table>
-
-
+    <H4>{{ name["name"] }} ({{ name["symbol"] }})</H4>
+    <H3>{{ name["price"] | usd }}</H3>
 
 {% endblock %}
